@@ -40,6 +40,10 @@
 
 #include "internal.h"
 
+#if IS_ENABLED(CONFIG_SEC_SLUB_DEBUG)
+#include <linux/sec_debug.h>
+#endif
+
 /*
  * Lock order:
  *   1. slab_mutex (Global Mutex)
@@ -666,12 +670,12 @@ static void slab_fix(struct kmem_cache *s, char *fmt, ...)
 }
 
 static bool freelist_corrupted(struct kmem_cache *s, struct page *page,
-			       void *freelist, void *nextfree)
+			       void **freelist, void *nextfree)
 {
 	if ((s->flags & SLAB_CONSISTENCY_CHECKS) &&
-	    !check_valid_pointer(s, page, nextfree)) {
-		object_err(s, page, freelist, "Freechain corrupt");
-		freelist = NULL;
+	    !check_valid_pointer(s, page, nextfree) && freelist) {
+		object_err(s, page, *freelist, "Freechain corrupt");
+		*freelist = NULL;
 		slab_fix(s, "Isolate corrupted freechain");
 		return true;
 	}
@@ -726,6 +730,7 @@ void object_err(struct kmem_cache *s, struct page *page,
 {
 	slab_bug(s, "%s", reason);
 	print_trailer(s, page, object);
+	panic("Slub overwritten in %s ", __func__);
 }
 
 static __printf(3, 4) void slab_err(struct kmem_cache *s, struct page *page,
@@ -739,6 +744,7 @@ static __printf(3, 4) void slab_err(struct kmem_cache *s, struct page *page,
 	va_end(args);
 	slab_bug(s, "%s", buf);
 	print_page_info(page);
+	panic("Slub overwritten in %s ", __func__);
 	dump_stack();
 }
 
@@ -786,6 +792,7 @@ static int check_bytes_and_report(struct kmem_cache *s, struct page *page,
 	pr_err("INFO: 0x%p-0x%p. First byte 0x%x instead of 0x%x\n",
 					fault, end - 1, fault[0], value);
 	print_trailer(s, page, object);
+	panic("Slub overwritten in %s ", __func__);
 
 	restore_bytes(s, what, value, fault, end);
 	return 0;
@@ -1322,6 +1329,28 @@ out:
 
 __setup("slub_debug", setup_slub_debug);
 
+static const char *exclusion_list[] = {
+	"zspage",
+	"zs_handle",
+	"zswap_entry",
+	"avtab_node",
+	"vm_area_struct",
+	"anon_vma_chain",
+	"anon_vma"
+};
+
+static int is_kmem_cache_excluded(const char *str)
+{
+	int i, excluded = 0;
+	for (i = 0; i < (int) ARRAY_SIZE(exclusion_list); i++){
+		if(!strncmp(str, exclusion_list[i], strlen(exclusion_list[i]))) {
+			excluded = 1;
+			break;
+		}
+	}
+	return excluded;
+}
+
 unsigned long kmem_cache_flags(unsigned long object_size,
 	unsigned long flags, const char *name,
 	void (*ctor)(void *))
@@ -1330,8 +1359,12 @@ unsigned long kmem_cache_flags(unsigned long object_size,
 	 * Enable debugging if selected on the kernel commandline.
 	 */
 	if (slub_debug && (!slub_debug_slabs || (name &&
-		!strncmp(slub_debug_slabs, name, strlen(slub_debug_slabs)))))
+		!strncmp(slub_debug_slabs, name, strlen(slub_debug_slabs))))) {
 		flags |= slub_debug;
+
+		if (name && is_kmem_cache_excluded(name))
+			flags &= ~SLAB_STORE_USER;
+	}
 
 	return flags;
 }
@@ -1377,7 +1410,7 @@ static inline void dec_slabs_node(struct kmem_cache *s, int node,
 							int objects) {}
 
 static bool freelist_corrupted(struct kmem_cache *s, struct page *page,
-			       void *freelist, void *nextfree)
+			       void **freelist, void *nextfree)
 {
 	return false;
 }
@@ -2095,7 +2128,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
 		 * 'freelist' is already corrupted.  So isolate all objects
 		 * starting at 'freelist'.
 		 */
-		if (freelist_corrupted(s, page, freelist, nextfree))
+		if (freelist_corrupted(s, page, &freelist, nextfree))
 			break;
 
 		do {
@@ -2647,6 +2680,9 @@ load_freelist:
 	 */
 	VM_BUG_ON(!c->page->frozen);
 	c->freelist = get_freepointer(s, freelist);
+#if IS_ENABLED(CONFIG_SEC_SLUB_DEBUG)
+	sec_slub_debug_panic_on_fp_corrupted(s, freelist, c->freelist);
+#endif
 	c->tid = next_tid(c->tid);
 	return freelist;
 
@@ -3030,7 +3066,9 @@ redo:
 
 	/* Same with comment on barrier() in slab_alloc_node() */
 	barrier();
-
+#if IS_ENABLED(CONFIG_SEC_SLUB_DEBUG)
+	sec_slub_debug_save_free_track(s, tail_obj);
+#endif
 	if (likely(page == c->page)) {
 		void **freelist = READ_ONCE(c->freelist);
 
