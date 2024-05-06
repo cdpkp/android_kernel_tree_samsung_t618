@@ -20,7 +20,7 @@
  */
 
 #include <stdlib.h>
-#include <yaml.h>
+#include <linux/yaml.h>
 #include "dtc.h"
 #include "srcpos.h"
 
