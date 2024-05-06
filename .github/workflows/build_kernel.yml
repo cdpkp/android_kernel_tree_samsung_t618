@@ -1,0 +1,82 @@
+name: Build Kernel
+
+on:
+  watch:
+    types: [started]
+    
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Kernel by ${{ github.actor }}
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python2 python3 device-tree-compiler
+      
+    - name: Setup Prebuilt Clang (AOSP)
+      run: |
+        mkdir clang && curl -Lsq https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android11-release/clang-r383902.tar.gz -o clang.tgz && tar -xzf clang.tgz -C clang
+
+    - name: Clone Prebuilt GCC (AOSP)
+      run: |
+        git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9.git -b android11-release ./gcc-64
+
+    - name: Set Properties
+      run: |
+        echo "BUILD_DATE=$(TZ=Asia/Manila date +%Y%m%d)" >> $GITHUB_ENV
+
+    - name: Build Kernel
+      run: |
+        export ARCH=arm64
+        export PATH="${GITHUB_WORKSPACE}/android/clang/bin:${GITHUB_WORKSPACE}/android/gcc-64/bin:/bin:$PATH"
+        export CLANG_TRIPLE=aarch64-linux-gnu-
+        export CROSS_COMPILE=aarch64-linux-androidkernel-
+        export BSP_BUILD_FAMILY=qogirl6
+        export DTC_OVERLAY_TEST_EXT=$(pwd)/tools/mkdtimg/ufdt_apply_overlay
+        export DTC_OVERLAY_VTS_EXT=$(pwd)/tools/mkdtimg/ufdt_verify_overlay_host
+        export BSP_BUILD_ANDROID_OS=y
+        make -j$(nproc --all) O=out BSP_BUILD_DT_OVERLAY=y CC=clang LD=ld.lld gta8_eur_open_defconfig
+        make -j$(nproc --all) O=out BSP_BUILD_DT_OVERLAY=y CC=clang LD=ld.lld 
+
+    - name: Check Kernel
+      run: |
+        if [ -f out/arch/arm64/boot/Image.gz ]; then
+            echo "KERNEL_IS_OK=true" >> $GITHUB_ENV
+            echo "KERNEL_VERSION=$(cat kernel/out/include/config/kernel.release)" >> $GITHUB_ENV
+        else
+            exit 1
+        fi
+
+    - name: Compress Kernel
+      if: env.KERNEL_IS_OK == 'true'
+      run: |
+        git clone --depth=1 https://github.com/cd-Crypton/AnyKernel3.git -b FOR-ALL
+        cp -nf kernel/out/arch/arm64/boot/Image.gz AnyKernel3
+        cp -nf $(find kernel/out -name '*.ko') AnyKernel3/modules/system/lib/modules/
+        cd AnyKernel3/
+        zip -r9 UPDATE-AnyKernel3-${{ env.BUILD_DATE }}.zip * -x .git README.md *placeholder
+
+    - name: Upload to Release
+      if: env.KERNEL_IS_OK == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          out/arch/arm64/boot/Image.gz
+          AnyKernel3/UPDATE-AnyKernel3-${{ env.BUILD_DATE }}.zip
+        name: Proton Kernel Build | ${{ env.KERNEL_VERSION }} | ${{ env.BUILD_DATE }}
+        tag_name: ${{ github.run_id }}
+        body: |
+         ### Notes
+          * Kernel were built/compiled using AOSP Prebuilts (Clang and GCC).
+          * Test at your own risk.
+          * Use kernel flasher or any custom recoveries to flash the compressed kernel zip file.
