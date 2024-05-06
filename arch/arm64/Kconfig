@@ -139,7 +139,6 @@ config ARCH_SPRD_PROJECT
 
 config TARGET_UMS9230_4H10
     def_bool y
-    string "SPRD product name"
 
 config TARGET_UMS512_1H10
     def_bool y
