@@ -38,7 +38,7 @@ jobs:
     - name: Build Kernel
       run: |
         export ARCH=arm64
-        export PATH="${GITHUB_WORKSPACE}/android/clang/bin:${GITHUB_WORKSPACE}/android/gcc-64/bin:/bin:$PATH"
+        export PATH="${GITHUB_WORKSPACE}/clang/bin:${GITHUB_WORKSPACE}/gcc-64/bin:/bin:$PATH"
         export CLANG_TRIPLE=aarch64-linux-gnu-
         export CROSS_COMPILE=aarch64-linux-androidkernel-
         export BSP_BUILD_FAMILY=qogirl6
