@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Download Prebuilt Clang and GCC (AOSP)
-git clone --depth=1 --single-branch https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b android11-release $(pwd)/toolchain/clang/host/linux-x86
+mkdir -p $(pwd)/toolchain/clang/host/linux-x86
+curl -Lsq https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android11-release/clang-r383902.tar.gz -o clang.tgz
+tar -xzf clang.tgz -C $(pwd)/toolchain/clang/host/linux-x86
 git clone --depth=1 --single-branch https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android11-release $(pwd)/toolchain/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
 
 export CROSS_COMPILE=$(pwd)/toolchain/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-

@@ -128,7 +128,7 @@ kernel/configs/android-*.cfg
 
 
 # For building from inside the source
-toolchains/
+toolchain/
 out/
 *.tgz
 *.tar.gz
