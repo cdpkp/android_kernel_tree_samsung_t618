@@ -137,7 +137,7 @@ config ARCH_SPRD_PROJECT
     string "SPRD project name"
 
 config TARGET_UMS9230_4H10
-    def_bool y
+    def_bool n
 
 config TARGET_UMS512_1H10
     def_bool y
