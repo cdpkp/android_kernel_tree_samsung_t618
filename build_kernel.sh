@@ -56,5 +56,9 @@ mkdir -p modulebuild
 echo "Copying modules into modulebuild..."
 cp -nr $(find out -name '*.ko') $(pwd)/modulebuild
 echo "Done copying modules into modulebuild."
-echo "Check kernelbuild and modulebuild for build final output."
+
+# AnyKernel3 Support
+cp -nf $(pwd)/kernelbuild/Image $(pwd)/AnyKernel3
+cp -nr $(pwd)/modulebuild/*.ko $(pwd)/AnyKernel3/modules/system/lib/modules
+cd AnyKernel3 && zip -r9 UPDATE-AnyKernel3-gta8-.zip * -x .git README.md *placeholder
 
