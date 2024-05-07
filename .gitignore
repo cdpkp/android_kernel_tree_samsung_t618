@@ -130,8 +130,11 @@ kernel/configs/android-*.cfg
 # For building from inside the source
 toolchain/
 out/
-*.tgz
-*.tar.gz
-build.log
+**/*.tgz
+**/*.tar.gz
+**/build.log
 modulebuild
 kernelbuild
+**/*.zip
+**/Image
+**/Image.gz
