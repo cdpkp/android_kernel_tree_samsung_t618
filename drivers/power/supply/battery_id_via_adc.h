@@ -8,7 +8,7 @@
 #define __BATTERY_ID_VIA_ADC__
 
 /* Tab A8 code for SR-AX6300-01-181 by zhangyanlong at 20210817 start */
-#ifdef  CONFIG_TARGET_UMS9230_4H10
+#ifdef CONFIG_TARGET_UMS9230_4H10
 /* Tab A8 code for SR-AX6300-01-181 by zhangyanlong at 20210817 end */
 /* HS03 code for SR-SL6215-01-606 by gaochao at 20210813 start */
 enum multiBatteryID {
