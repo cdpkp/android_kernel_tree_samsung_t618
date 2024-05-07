@@ -133,3 +133,5 @@ out/
 *.tgz
 *.tar.gz
 build.log
+modulebuild
+kernelbuild
