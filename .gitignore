@@ -138,3 +138,4 @@ kernelbuild
 **/*.zip
 **/Image
 **/Image.gz
+**/*.ko
