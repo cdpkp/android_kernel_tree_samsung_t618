@@ -2344,17 +2344,19 @@ static int __init fts_ts_init(void)
         return -ENODEV;
     }
     FTS_FUNC_ENTER();
-    /* Tab A8 code for AX6300U-7 by tangzhen at 20230726 start */
-    if (saved_command_line && (strstr(saved_command_line, "androidboot.mode=normal") ||
-        strstr(saved_command_line, "androidboot.mode=autotest") ||
-        strstr(saved_command_line, "androidboot.mode=alarm"))) {
-        FTS_ERROR("it is normal mode\n");
-        ret = spi_register_driver(&fts_ts_driver);
-    } else {
-        FTS_ERROR("it is not normal mode\n");
-        return -ENODEV;
-    }
-    /* Tab A8 code for AX6300U-7 by tangzhen at 20230726 end */
+	/* Tab A8 code for AX6300U-7 by tangzhen at 20230726 start */
+	if (saved_command_line && (strstr(saved_command_line, "androidboot.mode=normal") ||
+		strstr(saved_command_line, "androidboot.mode=autotest") ||
+		strstr(saved_command_line, "androidboot.mode=alarm") ||
+		strstr(saved_command_line, "androidboot.mode=recovery"))) {
+		FTS_ERROR("it is normal mode\n");
+
+		ret = spi_register_driver(&fts_ts_driver);
+	} else {
+		FTS_ERROR("it is not normal mode\n");
+		return -ENODEV;
+	}
+	/* Tab A8 code for AX6300U-7 by tangzhen at 20230726 end */
     if (ret != 0) {
         FTS_ERROR("Focaltech touch screen driver init failed!");
     }

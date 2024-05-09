@@ -1414,8 +1414,10 @@ static int __init himax_common_init(void)
 	/* Tab A8 code for AX6300U-7 by tangzhen at 20230726 start */
 	if (saved_command_line && (strstr(saved_command_line, "androidboot.mode=normal") ||
 		strstr(saved_command_line, "androidboot.mode=autotest") ||
-		strstr(saved_command_line, "androidboot.mode=alarm"))) {
+		strstr(saved_command_line, "androidboot.mode=alarm") ||
+		strstr(saved_command_line, "androidboot.mode=recovery"))) {
 		E("it is normal mode\n");
+
 		spi_register_driver(&himax_common_driver);
 	} else {
 		E("it is not normal mode\n");
