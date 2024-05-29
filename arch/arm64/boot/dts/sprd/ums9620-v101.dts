@@ -18,8 +18,8 @@
 #include <dt-bindings/soc/sprd,qogirn6pro-regs.h>
 #include <dt-bindings/soc/sprd,qogirn6pro-mask.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include "lcd/lcd_jd9365t_cpt_mipi_hdp.dtsi"
-#include "lcd/lcd_nl9911c_truly_mipi_hdp.dtsi"
+#include "lcd/HS03/lcd_jd9365t_cpt_mipi_hdp.dtsi"
+#include "lcd/HS03/lcd_nl9911c_truly_mipi_hdp.dtsi"
 #include "lcd/lcd_dummy_mipi.dtsi"
 
 / {
